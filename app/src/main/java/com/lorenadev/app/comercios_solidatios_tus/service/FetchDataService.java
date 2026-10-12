@@ -39,8 +39,7 @@ public class FetchDataService {
         this.gson = new GsonBuilder()
                 .serializeNulls()
                 .create();
-        this.typeToken = new TypeToken<>() {
-        };
+        this.typeToken = new TypeToken<>() {};
         this.appDatabaseService = AppDatabaseService.getInstance(context);
     }
 

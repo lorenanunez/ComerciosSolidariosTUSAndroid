@@ -55,8 +55,8 @@ public class MainActivity extends AppCompatActivity {
 
         startActivity(new Intent(this, MapLibreActivity.class));
 
-        var uruguay = new BoundingBox(-30, -53, -35, -58.5);
-        map.setScrollableAreaLimitDouble(uruguay);
+//        var uruguay = new BoundingBox(-30, -53, -35, -58.5);
+//        map.setScrollableAreaLimitDouble(uruguay);
 
         fetchDataService = new FetchDataService(this.getApplicationContext());
 
