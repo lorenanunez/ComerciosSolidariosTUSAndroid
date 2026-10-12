@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import okhttp3.Call;
@@ -38,14 +39,19 @@ public class SyncDataService {
     private final AppDatabaseService appDatabaseService;
     private final TypeToken<List<GetCommerceDto>> typeToken;
 
-    public SyncDataService(Context context) {
+    private final Consumer<Integer> onComplete;
+    private final Consumer<String> onError;
+
+    public SyncDataService(Context context, Consumer<Integer> onComplete, Consumer<String> onError) {
         this.client = new OkHttpClient();
         this.gson = new GsonBuilder()
                 .serializeNulls()
                 .create();
-        this.typeToken = new TypeToken<>() {
-        };
+        this.typeToken = new TypeToken<>() {};
         this.appDatabaseService = AppDatabaseService.getInstance(context);
+
+        this.onComplete = onComplete;
+        this.onError = onError;
     }
 
     public void sync() {
@@ -66,7 +72,9 @@ public class SyncDataService {
 
         @Override
         public void onFailure(@NonNull Call call, @NonNull IOException e) {
-            Log.e(SYNC_TAG, String.format("Failed to fetch commerces for synchronization: %s", e.getMessage()));
+            var message = String.format("Failed to fetch commerces for synchronization: %s", e.getMessage());
+            Log.e(SYNC_TAG, message);
+            onError.accept(message);
         }
 
         @Override
@@ -77,36 +85,32 @@ public class SyncDataService {
                     var list = gson.fromJson(body, typeToken);
                     if (CollectionUtils.isNotEmpty(list)) {
                         var mapped = list.stream()
-                                .map(this::mapToEntity)
+                                .map(CommerceEntity::fromDto)
                                 .collect(Collectors.toCollection(ArrayList::new)); // toList() requires API level 31 (Android 12)
                         try {
                             appDatabaseService.commerceDao().insertAll(mapped);
                             Log.i(SYNC_TAG, String.format(Utils.LOCALE_URUGUAY, "Insertion of %d commerces appears to be successful", mapped.size()));
+                            onComplete.accept(mapped.size());
                         } catch (Exception e) {
-                            Log.e(SYNC_TAG, String.format("Error saving to database: %s", e.getMessage()));
+                            var message = String.format("Error saving to database: %s", e.getMessage());
+                            Log.e(SYNC_TAG, message);
+                            onError.accept(message);
                         }
                     } else {
-                        Log.e(SYNC_TAG, "Response array is empty");
+                        var message = "Response array is empty";
+                        Log.e(SYNC_TAG, message);
+                        onError.accept(message);
                     }
                 } else {
-                    Log.w(SYNC_TAG, "Response body is empty");
+                    var message = "Response body is empty";
+                    Log.w(SYNC_TAG, message);
+                    onError.accept(message);
                 }
             } else {
-                Log.e(SYNC_TAG, String.format(Utils.LOCALE_URUGUAY, "Commerce fetching was not successful: %d", response.code()));
+                var message = String.format(Utils.LOCALE_URUGUAY, "Commerce fetching was not successful: %d", response.code());
+                Log.e(SYNC_TAG, message);
+                onError.accept(message);
             }
-        }
-
-        private CommerceEntity mapToEntity(GetCommerceDto dto) {
-            return CommerceEntity.builder()
-                    .midesId(dto.midesId())
-                    .lat(dto.lat())
-                    .lng(dto.lng())
-                    .name(dto.name())
-                    .address(dto.address())
-                    .phone(dto.phone())
-                    .category(dto.category())
-                    .subCategory(dto.subCategory())
-                    .build();
         }
     }
 }

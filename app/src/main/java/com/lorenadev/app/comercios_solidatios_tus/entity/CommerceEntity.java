@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import com.lorenadev.app.comercios_solidatios_tus.dto.GetCommerceDto;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,5 +29,18 @@ public class CommerceEntity {
     private String phone;
     private String category;
     private String subCategory;
+
+    public static CommerceEntity fromDto(GetCommerceDto e) {
+        return CommerceEntity.builder()
+                .midesId(e.midesId())
+                .lat(e.lat())
+                .lng(e.lng())
+                .name(e.name())
+                .address(e.address())
+                .phone(e.phone())
+                .category(e.category())
+                .subCategory(e.subCategory())
+                .build();
+    }
 
 }

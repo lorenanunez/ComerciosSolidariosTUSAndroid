@@ -13,9 +13,9 @@
         android:layout_height="wrap_content"
         android:background="@color/mides_blue"
         android:fitsSystemWindows="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@android:drawable/ic_menu_revert"
         app:title="Configuración"
         app:titleTextColor="@android:color/white" />
@@ -45,21 +45,51 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+        android:stepSize="1"
+        android:value="2"
         android:valueFrom="1"
         android:valueTo="10"
-        android:value="2"
-        android:stepSize="1"
-        app:layout_constraintTop_toBottomOf="@id/maxDistLabel"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/maxDistLabel" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/downloadButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Descargar datos para uso offline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/maxDistSlider" />
+
+    <ProgressBar
+        android:id="@+id/syncProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/downloadButton"
+        app:layout_constraintStart_toEndOf="@id/downloadButton"
+        app:layout_constraintTop_toTopOf="@id/downloadButton" />
+
+    <TextView
+        android:id="@+id/lastSyncLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="Sin datos descargados"
+        android:textColor="#666666"
+        android:textSize="14sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/downloadButton" />
 
     <com.google.android.material.checkbox.MaterialCheckBox
         android:id="@+id/offlineCheckbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="Disponible sin conexión a internet"
-        app:layout_constraintTop_toBottomOf="@id/maxDistSlider"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:text="Usar datos offline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/lastSyncLabel" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

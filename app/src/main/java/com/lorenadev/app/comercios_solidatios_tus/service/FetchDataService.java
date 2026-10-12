@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import okhttp3.Call;
@@ -47,7 +46,10 @@ public class FetchDataService {
 
     public void fetchCommercesOnline(Map<String, Object> params, Consumer<List<GetCommerceDto>> onSuccess, Consumer<String> onError) {
         try {
-            var builder = Objects.requireNonNull(HttpUrl.get(Utils.BACKEND_URL)).newBuilder();
+            var builder = new HttpUrl.Builder()
+                    .scheme(Utils.BACKEND_URL.getProtocol())
+                    .host(Utils.BACKEND_URL.getHost())
+                    .port(Utils.BACKEND_URL.getPort());
             params.forEach((k, v) -> builder.addQueryParameter(k, String.valueOf(v)));
             var request = new Request.Builder().url(builder.build()).build();
 
