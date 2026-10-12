@@ -53,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        startActivity(new Intent(this, MapLibreActivity.class));
+
         var uruguay = new BoundingBox(-30, -53, -35, -58.5);
         map.setScrollableAreaLimitDouble(uruguay);
 

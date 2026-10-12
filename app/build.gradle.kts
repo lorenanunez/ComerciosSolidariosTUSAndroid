@@ -48,6 +48,8 @@ dependencies {
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("org.modelmapper:modelmapper:3.2.6")
 
+    implementation("org.maplibre.gl:android-sdk:13.6.1")
+
     annotationProcessor("org.projectlombok:lombok:1.18.48")
     annotationProcessor("androidx.room:room-compiler:2.8.5")
 
