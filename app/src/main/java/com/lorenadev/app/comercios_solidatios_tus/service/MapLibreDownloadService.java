@@ -12,12 +12,18 @@ import androidx.annotation.NonNull;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -45,6 +51,21 @@ public final class MapLibreDownloadService {
         client.newCall(request).enqueue(new PMTilesDownloadCallback(onProgress, onError, onSuccess));
     }
 
+    private Path getPmtilesPath() {
+        return Paths.get(context.getFilesDir().getAbsolutePath(), PMTILES_FILENAME);
+    }
+
+    @SneakyThrows(IOException.class)
+    public boolean hasDownloadedRegion() {
+        var path = getPmtilesPath();
+        return Files.exists(path) && Files.size(getPmtilesPath()) > 0;
+    }
+
+    @SneakyThrows(MalformedURLException.class)
+    public URL getLocalPmtilesUrl() {
+        return URI.create(String.format("pmtiles://file://%s", getPmtilesPath())).toURL();
+    }
+
     @RequiredArgsConstructor
     private class PMTilesDownloadCallback implements Callback {
 
@@ -56,6 +77,7 @@ public final class MapLibreDownloadService {
         public void onFailure(@NonNull Call call, @NonNull IOException e) {
             var msg = String.format("Error attempting to download tiles: %s", e.getMessage());
             Log.e(TAG, msg, e);
+            onError.accept(msg);
         }
 
         @Override
@@ -64,6 +86,7 @@ public final class MapLibreDownloadService {
                 if (!r.isSuccessful()) {
                     var msg = String.format(LOCALE_URUGUAY, "Server response was not successful: HTTP %d", r.code());
                     Log.e(TAG, msg);
+                    onError.accept(msg);
                     return;
                 }
 

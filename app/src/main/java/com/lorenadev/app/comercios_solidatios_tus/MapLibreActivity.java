@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.lorenadev.app.comercios_solidatios_tus.entity.CommerceEntity;
 import com.lorenadev.app.comercios_solidatios_tus.service.FetchDataService;
+import com.lorenadev.app.comercios_solidatios_tus.service.MapLibreDownloadService;
 import com.lorenadev.app.comercios_solidatios_tus.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
@@ -47,12 +48,16 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import okhttp3.OkHttpClient;
+
 
 public class MapLibreActivity extends AppCompatActivity {
 
     private final Map<Long, CommerceEntity> symbolCommerceMap = new HashMap<>();
     private final Handler debounceHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    private MapLibreDownloadService mapLibreDownloadService;
 
     private FetchDataService fetchDataService;
     private MapView mapView;
@@ -67,6 +72,7 @@ public class MapLibreActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         MapLibre.getInstance(this);
+        mapLibreDownloadService = new MapLibreDownloadService(new OkHttpClient(), getApplicationContext());
         setContentView(R.layout.activity_map_libre);
 
         fetchDataService = new FetchDataService(this.getApplicationContext());
@@ -131,11 +137,27 @@ public class MapLibreActivity extends AppCompatActivity {
                     .target(new LatLng(-34.9011, -56.1645))
                     .zoom(12.0)
                     .build());
+
+            prepareMapStyle();
         });
 
         var toolbar = (MaterialToolbar) findViewById(R.id.toolbar);
         toolbar.setNavigationOnClickListener(v -> openConfiguration());
 
+    }
+
+
+
+    private void prepareMapStyle() {
+        if (mapLibreDownloadService.hasDownloadedRegion()) {
+            return;
+        }
+
+        mapLibreDownloadService.downloadEntireRegion(
+                percent -> Log.d("DOWNLOAD", String.format("Map download: %d%%", percent)),
+                () -> runOnUiThread(() -> Toast.makeText(this, "Mapa descargad", Toast.LENGTH_SHORT).show()),
+                errorMessage -> runOnUiThread(() -> Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show())
+        );
     }
 
     private void openConfiguration() {
