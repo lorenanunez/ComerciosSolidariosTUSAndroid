@@ -3,6 +3,7 @@ package com.lorenadev.app.comercios_solidatios_tus;
 import static android.widget.Toast.LENGTH_LONG;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,6 +21,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.lorenadev.app.comercios_solidatios_tus.entity.CommerceEntity;
 import com.lorenadev.app.comercios_solidatios_tus.service.FetchDataService;
 import com.lorenadev.app.comercios_solidatios_tus.util.Utils;
@@ -131,6 +133,13 @@ public class MapLibreActivity extends AppCompatActivity {
                     .build());
         });
 
+        var toolbar = (MaterialToolbar) findViewById(R.id.toolbar);
+        toolbar.setNavigationOnClickListener(v -> openConfiguration());
+
+    }
+
+    private void openConfiguration() {
+        startActivity(new Intent(this, SettingsActivity.class));
     }
 
     private void showCommerceDetails(CommerceEntity c) {
@@ -179,18 +188,21 @@ public class MapLibreActivity extends AppCompatActivity {
             return;
         }
 
-        symbolManager.create(new SymbolOptions()
+        var symbol = symbolManager.create(new SymbolOptions()
                 .withLatLng(new LatLng(c.getLat(), c.getLng()))
                 .withIconImage("marker_11")
                 .withIconSize(5.0f)
                 .withIconAnchor("bottom")
                 .withTextOffset(new Float[]{0f, 1.5f})
         );
+
+        symbolCommerceMap.put(symbol.getId(), c);
     }
 
     private void clearMarkers() {
         if (symbolManager != null) {
             symbolManager.deleteAll();
+            symbolCommerceMap.clear();
         }
     }
 

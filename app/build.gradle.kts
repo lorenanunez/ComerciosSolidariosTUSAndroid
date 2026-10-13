@@ -45,6 +45,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.14.0")
     implementation("org.apache.commons:commons-text:1.15.0")
     implementation("org.apache.commons:commons-collections4:4.6.0")
+    implementation("commons-io:commons-io:2.22.0")
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("org.modelmapper:modelmapper:3.2.6")
 

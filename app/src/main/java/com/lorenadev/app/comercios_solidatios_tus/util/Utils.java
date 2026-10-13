@@ -16,6 +16,8 @@ public final class Utils {
     public static Locale LOCALE_URUGUAY = Locale.forLanguageTag("es-UY");
     public static String PREFS_NAME = "app_preferences";
     public static String COMMERCE_TAG = "COMMERCE";
+    public static String SYNC_TAG = "SYNC";
+    public static String DOWNLOAD_TAG = "DOWNLOAD";
     public static String MAX_DIST_KEY = "max_distance";
     public static String OFFLINE_ENABLED_KEY = "offline_enabled";
 
@@ -23,7 +25,7 @@ public final class Utils {
 
     static {
         try {
-            BACKEND_URL = URI.create("http://192.168.1.5:8080/").toURL();
+            BACKEND_URL = URI.create("http://192.168.1.2:8080/").toURL();
         } catch (MalformedURLException e) {
             Log.e(COMMERCE_TAG, e.getMessage() == null ? "Error creating backend URL" : e.getMessage());
         }
