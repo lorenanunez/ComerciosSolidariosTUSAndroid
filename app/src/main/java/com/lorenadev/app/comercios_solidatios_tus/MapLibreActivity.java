@@ -2,9 +2,12 @@ package com.lorenadev.app.comercios_solidatios_tus;
 
 import static android.widget.Toast.LENGTH_LONG;
 
+import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.COMMERCE_TAG;
+
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -41,6 +44,7 @@ import org.maplibre.android.maps.Style;
 import org.maplibre.android.plugins.annotation.SymbolManager;
 import org.maplibre.android.plugins.annotation.SymbolOptions;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -104,6 +108,7 @@ public class MapLibreActivity extends AppCompatActivity {
         mapView.getMapAsync(map -> {
             mapLibreMap = map;
             map.setStyle(new Style.Builder().fromUri("asset://style-local.json"), style -> {
+                loadCustomMarker(style, "marker.png");
                 symbolManager = new SymbolManager(mapView, mapLibreMap, style);
                 symbolManager.setIconAllowOverlap(true);
                 symbolManager.setIconIgnorePlacement(true);
@@ -146,7 +151,19 @@ public class MapLibreActivity extends AppCompatActivity {
 
     }
 
+    private void loadCustomMarker(Style style, String markerName) {
+        try (var input = getAssets().open(markerName) ){
+            var bitmap = BitmapFactory.decodeStream(input);
+            if (bitmap == null) {
+                Log.e(COMMERCE_TAG, String.format("Failed to decode custom marker '%s'", markerName));
+                return;
+            }
 
+            style.addImage(markerName, bitmap);
+        } catch (IOException ex) {
+            Log.e(COMMERCE_TAG, String.format("Failed to load custom marker '%s'", markerName));
+        }
+    }
 
     private void prepareMapStyle() {
         if (mapLibreDownloadService.hasDownloadedRegion()) {
@@ -206,15 +223,16 @@ public class MapLibreActivity extends AppCompatActivity {
 
     private void printMarker(CommerceEntity c) {
         if (c == null || symbolManager == null) {
-            Log.w(Utils.COMMERCE_TAG, "Commerce or symbolManager is null");
+            Log.w(COMMERCE_TAG, "Commerce or symbolManager is null");
             return;
         }
 
         var symbol = symbolManager.create(new SymbolOptions()
                 .withLatLng(new LatLng(c.getLat(), c.getLng()))
-                .withIconImage("marker_11")
-                .withIconSize(5.0f)
+                .withIconImage("marker.png")
+                .withIconSize(0.105f)
                 .withIconAnchor("bottom")
+                .withTextField(c.getName())
                 .withTextOffset(new Float[]{0f, 1.5f})
         );
 
@@ -240,7 +258,7 @@ public class MapLibreActivity extends AppCompatActivity {
             commerces.stream()
                     .map(CommerceEntity::fromDto)
                     .forEach(this::printMarker);
-        }), error -> Log.e(Utils.COMMERCE_TAG, "Error: " + error));
+        }), error -> Log.e(COMMERCE_TAG, "Error: " + error));
     }
 
     private void loadCommercesOffline(double lat, double lng, double maxDist) {

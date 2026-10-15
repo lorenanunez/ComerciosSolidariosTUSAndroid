@@ -1,5 +1,7 @@
 package com.lorenadev.app.comercios_solidatios_tus.service;
 
+import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.BACKEND_URL;
+
 import android.content.Context;
 import android.location.Location;
 import android.util.Log;
@@ -46,9 +48,8 @@ public class FetchDataService {
     public void fetchCommercesOnline(Map<String, Object> params, Consumer<List<GetCommerceDto>> onSuccess, Consumer<String> onError) {
         try {
             var builder = new HttpUrl.Builder()
-                    .scheme(Utils.BACKEND_URL.getProtocol())
-                    .host(Utils.BACKEND_URL.getHost())
-                    .port(Utils.BACKEND_URL.getPort());
+                    .scheme(BACKEND_URL.getProtocol())
+                    .host(BACKEND_URL.getHost());
             params.forEach((k, v) -> builder.addQueryParameter(k, String.valueOf(v)));
             var request = new Request.Builder().url(builder.build()).build();
 

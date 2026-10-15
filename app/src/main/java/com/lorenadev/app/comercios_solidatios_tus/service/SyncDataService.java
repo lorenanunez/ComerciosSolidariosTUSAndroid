@@ -58,7 +58,6 @@ public class SyncDataService {
         var url = new HttpUrl.Builder()
                 .scheme(BACKEND_URL.getProtocol())
                 .host(BACKEND_URL.getHost())
-                .port(BACKEND_URL.getPort())
                 .addPathSegment("all")
                 .build();
         var request = new Request.Builder()

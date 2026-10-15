@@ -12,9 +12,7 @@ import androidx.annotation.NonNull;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,7 +42,6 @@ public final class MapLibreDownloadService {
         var url = new HttpUrl.Builder()
                 .scheme(BACKEND_URL.getProtocol())
                 .host(BACKEND_URL.getHost())
-                .port(BACKEND_URL.getPort() == -1 ? BACKEND_URL.getDefaultPort() : BACKEND_URL.getPort())
                 .addPathSegments("api/tiles/uruguay.pmtiles")
                 .build();
         var request = new Request.Builder().url(url).build();
@@ -61,9 +58,8 @@ public final class MapLibreDownloadService {
         return Files.exists(path) && Files.size(getPmtilesPath()) > 0;
     }
 
-    @SneakyThrows(MalformedURLException.class)
-    public URL getLocalPmtilesUrl() {
-        return URI.create(String.format("pmtiles://file://%s", getPmtilesPath())).toURL();
+    public URI getLocalPmtilesUri() {
+        return URI.create(String.format("pmtiles://file://%s", getPmtilesPath()));
     }
 
     @RequiredArgsConstructor

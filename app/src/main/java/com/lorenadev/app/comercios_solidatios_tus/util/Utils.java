@@ -25,7 +25,7 @@ public final class Utils {
 
     static {
         try {
-            BACKEND_URL = URI.create("http://192.168.1.2:8080/").toURL();
+            BACKEND_URL = URI.create("https://cs-tus-app-backend-v2.salmonhill-1870f376.brazilsouth.azurecontainerapps.io").toURL();
         } catch (MalformedURLException e) {
             Log.e(COMMERCE_TAG, e.getMessage() == null ? "Error creating backend URL" : e.getMessage());
         }
