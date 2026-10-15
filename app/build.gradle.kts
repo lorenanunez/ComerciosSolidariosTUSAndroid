@@ -39,7 +39,6 @@ dependencies {
     implementation(libs.material)
 
     implementation("org.projectlombok:lombok:1.18.48")
-    implementation("org.osmdroid:osmdroid-android:6.1.20")
     implementation("androidx.preference:preference:1.2.1")
     implementation("com.squareup.okhttp3:okhttp:5.5.0")
     implementation("com.google.code.gson:gson:2.14.0")

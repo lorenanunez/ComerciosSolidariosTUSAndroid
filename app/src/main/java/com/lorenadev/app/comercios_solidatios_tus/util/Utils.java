@@ -20,6 +20,7 @@ public final class Utils {
     public static String DOWNLOAD_TAG = "DOWNLOAD";
     public static String MAX_DIST_KEY = "max_distance";
     public static String OFFLINE_ENABLED_KEY = "offline_enabled";
+    public static final String PMTILES_FILENAME = "uruguay.pmtiles";
 
     public static URL BACKEND_URL;
 

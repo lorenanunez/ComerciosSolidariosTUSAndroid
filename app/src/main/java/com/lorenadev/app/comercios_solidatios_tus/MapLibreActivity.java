@@ -3,6 +3,7 @@ package com.lorenadev.app.comercios_solidatios_tus;
 import static android.widget.Toast.LENGTH_LONG;
 
 import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.COMMERCE_TAG;
+import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.DOWNLOAD_TAG;
 
 import android.Manifest;
 import android.content.Intent;
@@ -28,6 +29,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.lorenadev.app.comercios_solidatios_tus.entity.CommerceEntity;
 import com.lorenadev.app.comercios_solidatios_tus.service.FetchDataService;
 import com.lorenadev.app.comercios_solidatios_tus.service.MapLibreDownloadService;
+import com.lorenadev.app.comercios_solidatios_tus.service.OfflineService;
 import com.lorenadev.app.comercios_solidatios_tus.util.Utils;
 
 import org.apache.commons.lang3.StringUtils;
@@ -62,6 +64,7 @@ public class MapLibreActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private MapLibreDownloadService mapLibreDownloadService;
+    private OfflineService offlineService;
 
     private FetchDataService fetchDataService;
     private MapView mapView;
@@ -77,6 +80,7 @@ public class MapLibreActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         MapLibre.getInstance(this);
         mapLibreDownloadService = new MapLibreDownloadService(new OkHttpClient(), getApplicationContext());
+        offlineService = new OfflineService(getApplicationContext());
         setContentView(R.layout.activity_map_libre);
 
         fetchDataService = new FetchDataService(this.getApplicationContext());
@@ -107,7 +111,7 @@ public class MapLibreActivity extends AppCompatActivity {
 
         mapView.getMapAsync(map -> {
             mapLibreMap = map;
-            map.setStyle(new Style.Builder().fromUri("asset://style-local.json"), style -> {
+            map.setStyle(offlineService.loadLocalMapStyle(), style -> {
                 loadCustomMarker(style, "marker.png");
                 symbolManager = new SymbolManager(mapView, mapLibreMap, style);
                 symbolManager.setIconAllowOverlap(true);
@@ -166,13 +170,13 @@ public class MapLibreActivity extends AppCompatActivity {
     }
 
     private void prepareMapStyle() {
-        if (mapLibreDownloadService.hasDownloadedRegion()) {
+        if (offlineService.hasDownloadedRegion()) {
             return;
         }
 
         mapLibreDownloadService.downloadEntireRegion(
-                percent -> Log.d("DOWNLOAD", String.format("Map download: %d%%", percent)),
-                () -> runOnUiThread(() -> Toast.makeText(this, "Mapa descargad", Toast.LENGTH_SHORT).show()),
+                percent -> Log.d(DOWNLOAD_TAG, String.format("Map download: %d%%", percent)),
+                () -> runOnUiThread(() -> Toast.makeText(this, "Mapa descargado", Toast.LENGTH_SHORT).show()),
                 errorMessage -> runOnUiThread(() -> Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show())
         );
     }

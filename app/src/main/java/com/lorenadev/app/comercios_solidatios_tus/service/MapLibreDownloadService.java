@@ -3,6 +3,7 @@ package com.lorenadev.app.comercios_solidatios_tus.service;
 
 import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.BACKEND_URL;
 import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.LOCALE_URUGUAY;
+import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.PMTILES_FILENAME;
 
 import android.content.Context;
 import android.util.Log;
@@ -12,16 +13,12 @@ import androidx.annotation.NonNull;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.HttpUrl;
@@ -33,7 +30,6 @@ import okhttp3.Response;
 public final class MapLibreDownloadService {
 
     private static final String TAG = "MapDownloadService";
-    private static final String PMTILES_FILENAME = "uruguay.pmtiles";
 
     private final OkHttpClient client;
     private final Context context;
@@ -46,20 +42,6 @@ public final class MapLibreDownloadService {
                 .build();
         var request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new PMTilesDownloadCallback(onProgress, onError, onSuccess));
-    }
-
-    private Path getPmtilesPath() {
-        return Paths.get(context.getFilesDir().getAbsolutePath(), PMTILES_FILENAME);
-    }
-
-    @SneakyThrows(IOException.class)
-    public boolean hasDownloadedRegion() {
-        var path = getPmtilesPath();
-        return Files.exists(path) && Files.size(getPmtilesPath()) > 0;
-    }
-
-    public URI getLocalPmtilesUri() {
-        return URI.create(String.format("pmtiles://file://%s", getPmtilesPath()));
     }
 
     @RequiredArgsConstructor
