@@ -15,6 +15,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
@@ -72,6 +73,7 @@ public final class MapLibreDownloadService {
                 var tmpPath = finalPath.resolveSibling(PMTILES_FILENAME + ".tmp");
 
                 var body = r.body();
+
                 var total = body.contentLength();
                 var downloaded = 0L;
                 var lastPercent = -1;

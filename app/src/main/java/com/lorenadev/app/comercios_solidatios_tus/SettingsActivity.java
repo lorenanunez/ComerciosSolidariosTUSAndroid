@@ -29,10 +29,21 @@ public class SettingsActivity extends AppCompatActivity {
         int savedDist = preferences.getInt(Utils.MAX_DIST_KEY, 2);
 
         var offlineCheckbox = (MaterialCheckBox) findViewById(R.id.offlineCheckbox);
+        offlineCheckbox.setChecked(
+                preferences.getBoolean(Utils.OFFLINE_ENABLED_KEY, false)
+        );
+
+        offlineCheckbox.setOnCheckedChangeListener(
+                (button, checked) -> preferences.edit()
+                        .putBoolean(Utils.OFFLINE_ENABLED_KEY, checked)
+                        .apply()
+        );
+
+
         int syncCount = preferences.getInt("sync_count_key", 0);
         boolean thereIsData = syncCount > 0;
 
-        offlineCheckbox.setEnabled(thereIsData);
+        //offlineCheckbox.setEnabled(thereIsData);
 
         var toolbar = (MaterialToolbar) findViewById(R.id.settingsToolbar);
         toolbar.setNavigationOnClickListener(v -> finish());
@@ -69,8 +80,10 @@ public class SettingsActivity extends AppCompatActivity {
                         syncProgress.setVisibility(View.GONE);
                         var message = String.format(Utils.LOCALE_URUGUAY, "%d comercios descargados", count);
                         lastSyncLabel.setText(message);
-                        offlineCheckbox.setEnabled(true);
                         preferences.edit().putBoolean(Utils.OFFLINE_ENABLED_KEY, true).apply();
+
+                        offlineCheckbox.setEnabled(count > 0);
+                        offlineCheckbox.setChecked(true);
                     }),
                     message -> runOnUiThread(() -> {
                         downloadButton.setEnabled(true);

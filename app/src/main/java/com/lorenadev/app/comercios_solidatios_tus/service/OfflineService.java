@@ -1,6 +1,6 @@
 package com.lorenadev.app.comercios_solidatios_tus.service;
 
-import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.DOWNLOAD_TAG;
+import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.OFFLINE_KEY;
 import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.PMTILES_FILENAME;
 
 import android.content.Context;
@@ -9,7 +9,6 @@ import android.util.Log;
 import com.google.gson.JsonParser;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.maplibre.android.maps.Style;
 
 import java.io.IOException;
@@ -29,7 +28,6 @@ public class OfflineService {
 
     public Style.Builder loadLocalMapStyle() {
         return new Style.Builder().fromJson(readStyleJsonWithLocalPmtiles());
-
     }
 
     @SneakyThrows(IOException.class)
@@ -41,7 +39,9 @@ public class OfflineService {
                     .getAsJsonObject("openmaptiles")
                     .addProperty("url", getLocalPmtilesUri().toString());
 
-            return styleJson.toString();
+            var response = styleJson.toString();
+            Log.d(OFFLINE_KEY, String.format("styleJson: %s", response));
+            return response;
         }
     }
 
@@ -49,13 +49,22 @@ public class OfflineService {
         return Paths.get(context.getFilesDir().getAbsolutePath(), PMTILES_FILENAME);
     }
 
-    @SneakyThrows(IOException.class)
+
     public boolean hasDownloadedRegion() {
-        var path = getPmtilesPath();
-        return Files.exists(path) && Files.size(getPmtilesPath()) > 0;
+        try {
+            var path = getPmtilesPath();
+            var downloaded = (Files.exists(path) && Files.size(getPmtilesPath()) > 0);
+            Log.d(OFFLINE_KEY, String.format("Region downloaded: %b", downloaded));
+            return downloaded;
+        } catch (IOException ex) {
+            Log.e(OFFLINE_KEY, ex.getMessage(), ex);
+            return false;
+        }
     }
 
     public URI getLocalPmtilesUri() {
-        return URI.create(String.format("pmtiles://file://%s", getPmtilesPath()));
+        var uri = URI.create(String.format("pmtiles://file://%s", getPmtilesPath()));
+        Log.d(OFFLINE_KEY, uri.toString());
+        return uri;
     }
 }

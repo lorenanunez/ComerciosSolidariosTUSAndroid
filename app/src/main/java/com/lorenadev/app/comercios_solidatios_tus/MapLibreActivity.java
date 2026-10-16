@@ -1,6 +1,7 @@
 package com.lorenadev.app.comercios_solidatios_tus;
 
 import static android.widget.Toast.LENGTH_LONG;
+import static android.widget.Toast.LENGTH_SHORT;
 
 import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.COMMERCE_TAG;
 import static com.lorenadev.app.comercios_solidatios_tus.util.Utils.DOWNLOAD_TAG;
@@ -111,38 +112,8 @@ public class MapLibreActivity extends AppCompatActivity {
 
         mapView.getMapAsync(map -> {
             mapLibreMap = map;
-            map.setStyle(offlineService.loadLocalMapStyle(), style -> {
-                loadCustomMarker(style, "marker.png");
-                symbolManager = new SymbolManager(mapView, mapLibreMap, style);
-                symbolManager.setIconAllowOverlap(true);
-                symbolManager.setIconIgnorePlacement(true);
 
-                var uruguayBounds = new LatLngBounds.Builder()
-                        .include(new LatLng(-30.0, -53.0))
-                        .include(new LatLng(-35.0, -58.5))
-                        .build();
-
-                mapLibreMap.setLatLngBoundsForCameraTarget(uruguayBounds);
-                mapLibreMap.setMinZoomPreference(6.0);
-
-                symbolManager.addClickListener(symbol -> {
-                    var commerce = symbolCommerceMap.get(symbol.getId());
-                    if (commerce != null) {
-                        showCommerceDetails(commerce);
-                    }
-                    return true;
-                });
-
-                mapLibreMap.addOnMapClickListener(latLng -> {
-                    hideCommerceDetails();
-                    return false;
-                });
-
-                mapLibreMap.addOnCameraIdleListener(this::scheduleReload);
-                scheduleReload();
-            });
-
-            map.setCameraPosition(new CameraPosition.Builder()
+            mapLibreMap.setCameraPosition(new CameraPosition.Builder()
                     .target(new LatLng(-34.9011, -56.1645))
                     .zoom(12.0)
                     .build());
@@ -170,14 +141,69 @@ public class MapLibreActivity extends AppCompatActivity {
     }
 
     private void prepareMapStyle() {
+        Toast.makeText(this, "prepareMapStyle()", LENGTH_LONG).show();
         if (offlineService.hasDownloadedRegion()) {
+            applyMapStyle();
             return;
         }
 
         mapLibreDownloadService.downloadEntireRegion(
                 percent -> Log.d(DOWNLOAD_TAG, String.format("Map download: %d%%", percent)),
-                () -> runOnUiThread(() -> Toast.makeText(this, "Mapa descargado", Toast.LENGTH_SHORT).show()),
-                errorMessage -> runOnUiThread(() -> Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show())
+                () -> runOnUiThread(() -> {
+                    applyMapStyle();  Toast.makeText(this, "Mapa descargado", LENGTH_SHORT).show();
+                }),
+                errorMessage -> runOnUiThread(() -> Toast.makeText(this, errorMessage, LENGTH_SHORT).show())
+        );
+    }
+
+    private void applyMapStyle() {
+        mapLibreMap.setStyle(
+                offlineService.loadLocalMapStyle(),
+                style -> {
+                    loadCustomMarker(style, "marker.png");
+
+                    symbolManager = new SymbolManager(
+                            mapView,
+                            mapLibreMap,
+                            style
+                    );
+
+                    symbolManager.setIconAllowOverlap(true);
+                    symbolManager.setIconIgnorePlacement(true);
+
+                    var uruguayBounds = new LatLngBounds.Builder()
+                            .include(new LatLng(-30.0, -53.0))
+                            .include(new LatLng(-35.0, -58.5))
+                            .build();
+
+                    mapLibreMap.setLatLngBoundsForCameraTarget(
+                            uruguayBounds
+                    );
+                    mapLibreMap.setMinZoomPreference(6.0);
+
+                    symbolManager.addClickListener(symbol -> {
+                        var commerce = symbolCommerceMap.get(
+                                symbol.getId()
+                        );
+
+                        if (commerce != null) {
+                            showCommerceDetails(commerce);
+                        }
+
+                        return true;
+                    });
+
+                    mapLibreMap.addOnMapClickListener(latLng -> {
+                        hideCommerceDetails();
+                        return false;
+                    });
+
+                    mapLibreMap.addOnCameraIdleListener(
+                            this::scheduleReload
+                    );
+
+                    scheduleReload();
+                }
         );
     }
 
