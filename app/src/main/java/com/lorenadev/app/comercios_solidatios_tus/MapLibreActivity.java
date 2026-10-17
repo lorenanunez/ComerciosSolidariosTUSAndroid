@@ -112,13 +112,19 @@ public class MapLibreActivity extends AppCompatActivity {
 
         mapView.getMapAsync(map -> {
             mapLibreMap = map;
-
             mapLibreMap.setCameraPosition(new CameraPosition.Builder()
                     .target(new LatLng(-34.9011, -56.1645))
                     .zoom(12.0)
                     .build());
 
-            prepareMapStyle();
+            setupMapOnce();
+
+            if (offlineService.hasDownloadedRegion()) {
+                applyStyle(offlineService.loadLocalMapStyle());   // offline, instantáneo
+            } else {
+                applyStyle(offlineService.loadOnlineMapStyle());  // se ve ya, desde el backend
+                startBackgroundDownload();                        // y bajamos para la próxima vez
+            }
         });
 
         var toolbar = (MaterialToolbar) findViewById(R.id.toolbar);
@@ -140,70 +146,60 @@ public class MapLibreActivity extends AppCompatActivity {
         }
     }
 
-    private void prepareMapStyle() {
-        Toast.makeText(this, "prepareMapStyle()", LENGTH_LONG).show();
-        if (offlineService.hasDownloadedRegion()) {
-            applyMapStyle();
-            return;
-        }
+    /** Se ejecuta en CADA cambio de style (online → local). */
+    /** Se configura UNA vez por mapa (no depende del style). */
+    private void setupMapOnce() {
+        var uruguayBounds = new LatLngBounds.Builder()
+                .include(new LatLng(-30.0, -53.0))
+                .include(new LatLng(-35.0, -58.5))
+                .build();
+        mapLibreMap.setLatLngBoundsForCameraTarget(uruguayBounds);
+        mapLibreMap.setMinZoomPreference(6.0);
 
+        mapLibreMap.addOnMapClickListener(latLng -> {
+            hideCommerceDetails();
+            return false;
+        });
+        mapLibreMap.addOnCameraIdleListener(this::scheduleReload);
+    }
+
+    /** Se ejecuta en CADA cambio de style (online → local). */
+    private void applyStyle(Style.Builder builder) {
+        if (symbolManager != null) {
+            symbolManager.onDestroy(); // antes de setStyle, para no dejar capas huérfanas
+            symbolManager = null;
+        }
+        symbolCommerceMap.clear();
+        hideCommerceDetails();
+
+        mapLibreMap.setStyle(builder, style -> {
+            loadCustomMarker(style, "marker.png");
+
+            symbolManager = new SymbolManager(mapView, mapLibreMap, style);
+            symbolManager.setIconAllowOverlap(true);
+            symbolManager.setIconIgnorePlacement(true);
+            symbolManager.addClickListener(symbol -> {
+                var commerce = symbolCommerceMap.get(symbol.getId());
+                if (commerce != null) showCommerceDetails(commerce);
+                return true;
+            });
+
+            scheduleReload();
+        });
+    }
+
+    private void startBackgroundDownload() {
         mapLibreDownloadService.downloadEntireRegion(
                 percent -> Log.d(DOWNLOAD_TAG, String.format("Map download: %d%%", percent)),
                 () -> runOnUiThread(() -> {
-                    applyMapStyle();  Toast.makeText(this, "Mapa descargado", LENGTH_SHORT).show();
+                    if (isFinishing() || isDestroyed() || mapLibreMap == null) return; // Activity muerta → no tocar
+                    applyStyle(offlineService.loadLocalMapStyle());
+                    Toast.makeText(this, "Mapa offline listo", LENGTH_SHORT).show();
                 }),
-                errorMessage -> runOnUiThread(() -> Toast.makeText(this, errorMessage, LENGTH_SHORT).show())
-        );
-    }
-
-    private void applyMapStyle() {
-        mapLibreMap.setStyle(
-                offlineService.loadLocalMapStyle(),
-                style -> {
-                    loadCustomMarker(style, "marker.png");
-
-                    symbolManager = new SymbolManager(
-                            mapView,
-                            mapLibreMap,
-                            style
-                    );
-
-                    symbolManager.setIconAllowOverlap(true);
-                    symbolManager.setIconIgnorePlacement(true);
-
-                    var uruguayBounds = new LatLngBounds.Builder()
-                            .include(new LatLng(-30.0, -53.0))
-                            .include(new LatLng(-35.0, -58.5))
-                            .build();
-
-                    mapLibreMap.setLatLngBoundsForCameraTarget(
-                            uruguayBounds
-                    );
-                    mapLibreMap.setMinZoomPreference(6.0);
-
-                    symbolManager.addClickListener(symbol -> {
-                        var commerce = symbolCommerceMap.get(
-                                symbol.getId()
-                        );
-
-                        if (commerce != null) {
-                            showCommerceDetails(commerce);
-                        }
-
-                        return true;
-                    });
-
-                    mapLibreMap.addOnMapClickListener(latLng -> {
-                        hideCommerceDetails();
-                        return false;
-                    });
-
-                    mapLibreMap.addOnCameraIdleListener(
-                            this::scheduleReload
-                    );
-
-                    scheduleReload();
-                }
+                error -> runOnUiThread(() -> {
+                    Log.e(DOWNLOAD_TAG, error);
+                    if (!isDestroyed()) Toast.makeText(this, "No se pudo descargar el mapa offline", LENGTH_SHORT).show();
+                })
         );
     }
 
@@ -235,7 +231,9 @@ public class MapLibreActivity extends AppCompatActivity {
     private void scheduleReload() {
         debounceHandler.removeCallbacks(debounceRunnable);
         debounceRunnable = () -> {
-            if (mapLibreMap == null) return;
+            if (mapLibreMap == null || symbolManager == null) {
+                return;
+            }
             var prefs = getSharedPreferences(Utils.PREFS_NAME, MODE_PRIVATE);
             var center = mapLibreMap.getCameraPosition().target;
 
@@ -309,9 +307,14 @@ public class MapLibreActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        debounceHandler.removeCallbacksAndMessages(null);
+        if (symbolManager != null) {
+            symbolManager.onDestroy();
+            symbolManager = null;
+        }
         if (mapView != null) mapView.onDestroy();
         executor.shutdown();
+        super.onDestroy();
     }
 
     @Override
@@ -340,7 +343,7 @@ public class MapLibreActivity extends AppCompatActivity {
 
     @Override
     public void onSaveInstanceState(@NonNull Bundle outState, @NonNull PersistableBundle outPersistentState) {
-        super.onSaveInstanceState(outState, outPersistentState);
+        super.onSaveInstanceState(outState);
         if (mapView != null) mapView.onSaveInstanceState(outState);
     }
 

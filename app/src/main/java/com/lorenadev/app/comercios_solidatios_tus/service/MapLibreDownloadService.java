@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
@@ -30,12 +31,18 @@ import okhttp3.Response;
 @RequiredArgsConstructor
 public final class MapLibreDownloadService {
 
+
+    private static final AtomicBoolean DOWNLOAD_IN_PROGRESS = new AtomicBoolean(false);
     private static final String TAG = "MapDownloadService";
 
     private final OkHttpClient client;
     private final Context context;
 
-    public void downloadEntireRegion(IntConsumer onProgress, Runnable onSuccess, Consumer<String> onError) {
+    public boolean downloadEntireRegion(IntConsumer onProgress, Runnable onSuccess, Consumer<String> onError) {
+        if (!DOWNLOAD_IN_PROGRESS.compareAndSet(false, true)) {
+            Log.i(TAG, "Ya hay una descarga del mapa en curso, se ignora");
+            return false;
+        }
         var url = new HttpUrl.Builder()
                 .scheme(BACKEND_URL.getProtocol())
                 .host(BACKEND_URL.getHost())
@@ -43,6 +50,7 @@ public final class MapLibreDownloadService {
                 .build();
         var request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new PMTilesDownloadCallback(onProgress, onError, onSuccess));
+        return true;
     }
 
     @RequiredArgsConstructor
@@ -54,6 +62,7 @@ public final class MapLibreDownloadService {
 
         @Override
         public void onFailure(@NonNull Call call, @NonNull IOException e) {
+            DOWNLOAD_IN_PROGRESS.set(false);
             var msg = String.format("Error attempting to download tiles: %s", e.getMessage());
             Log.e(TAG, msg, e);
             onError.accept(msg);
@@ -114,6 +123,8 @@ public final class MapLibreDownloadService {
                 onProgress.accept(100);
                 Log.i(TAG, String.format("PMTiles downloaded successfully: %s", finalPath));
                 onSuccess.run();
+            } finally {
+                DOWNLOAD_IN_PROGRESS.set(false);
             }
 
         }

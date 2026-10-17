@@ -52,7 +52,7 @@
     }
   },
   "sprite": "asset://sprite",
-  "glyphs": "http://192.168.1.5:8080/api/fonts/{fontstack}/{range}.pbf",
+  "glyphs": "https://cs-tus-app-backend-v2.salmonhill-1870f376.brazilsouth.azurecontainerapps.io/{fontstack}/{range}.pbf",
   "layers": [
     {
       "id": "background",
